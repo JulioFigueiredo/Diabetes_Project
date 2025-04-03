@@ -1,74 +1,131 @@
-import { Image, StyleSheet, Platform } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { View, Alert, Keyboard, TouchableOpacity } from "react-native";
+import { useState } from "react";
+import { TextInput, Button, Card, Text } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function HomeScreen() {
+  const [meal, setMeal] = useState("");
+  const [insulin, setInsulin] = useState("");
+  const [time, setTime] = useState("");
+  const [glucose, setGlucose] = useState("");
+  const [date, setDate] = useState(new Date()); // Data padrão é o dia atual
+  const [showPicker, setShowPicker] = useState(false);
+
+  // Função para salvar no AsyncStorage
+  const saveMeal = async () => {
+    if (!meal || !insulin || !time || !glucose) {
+      Alert.alert("Erro", "Preencha todos os campos!");
+      return;
+    }
+
+    try {
+      const newRecord = { 
+        id: Date.now().toString(), 
+        date: date.toLocaleDateString(), // Salvar data formatada
+        time, 
+        meal, 
+        insulin, 
+        glucose 
+      };
+
+      const existingRecords = await AsyncStorage.getItem("meals");
+      const updatedRecords = existingRecords ? JSON.parse(existingRecords) : [];
+      updatedRecords.push(newRecord);
+
+      await AsyncStorage.setItem("meals", JSON.stringify(updatedRecords));
+      Alert.alert("Sucesso", "Refeição salva com sucesso!");
+
+      // Fechar teclado e limpar os campos após salvar
+      Keyboard.dismiss();
+      setMeal("");
+      setInsulin("");
+      setTime("");
+      setGlucose("");
+      setDate(new Date()); // Reseta a data para o dia atual
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível salvar.");
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <View style={{ flex: 1, padding: 20, backgroundColor: "#F2F2F2" }}>
+      <Card style={{ padding: 20, borderRadius: 10 }}>
+        <Text variant="titleLarge" style={{ marginBottom: 10 }}>
+          Registrar Refeição
+        </Text>
+
+        {/* Campo de Data */}
+        <TouchableOpacity onPress={() => setShowPicker(true)}>
+          <TextInput
+            label="Data"
+            mode="outlined"
+            value={date.toLocaleDateString()}
+            editable={false} // Impede a edição manual
+            style={{ marginBottom: 10 }}
+          />
+        </TouchableOpacity>
+
+        {showPicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="default"
+            onChange={(event, selectedDate) => {
+              setShowPicker(false);
+              if (selectedDate) {
+                setDate(selectedDate);
+              }
+            }}
+          />
+        )}
+
+        <TextInput
+          label="Horário da refeição"
+          mode="outlined"
+          placeholder="Ex: 12:00"
+          value={time}
+          onChangeText={setTime}
+          style={{ marginBottom: 10 }}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+
+        <TextInput
+          label="Refeição"
+          mode="outlined"
+          placeholder="Ex: Almoço"
+          value={meal}
+          onChangeText={setMeal}
+          style={{ marginBottom: 10 }}
+        />
+
+        <TextInput
+          label="Insulina Aplicada (U)"
+          mode="outlined"
+          keyboardType="numeric"
+          placeholder="Ex: 5"
+          value={insulin}
+          onChangeText={setInsulin}
+          style={{ marginBottom: 10 }}
+        />
+
+        <TextInput
+          label="Glicemia"
+          mode="outlined"
+          keyboardType="numeric"
+          placeholder="Ex: 110"
+          value={glucose}
+          onChangeText={setGlucose}
+          style={{ marginBottom: 10 }}
+        />
+
+        <Button
+          mode="contained"
+          onPress={saveMeal}
+          style={{ marginTop: 10, borderRadius: 10 }}
+        >
+          Salvar Refeição
+        </Button>
+      </Card>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
