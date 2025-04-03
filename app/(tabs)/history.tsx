@@ -7,12 +7,14 @@ export default function HistoryScreen() {
   const [search, setSearch] = useState("");
   const [meals, setMeals] = useState([]);
 
-  // Função para carregar refeições do AsyncStorage
+  // Carregar refeições do AsyncStorage
   const loadMeals = async () => {
     try {
       const storedMeals = await AsyncStorage.getItem("meals");
       if (storedMeals) {
         setMeals(JSON.parse(storedMeals));
+      } else {
+        setMeals([]);
       }
     } catch (error) {
       console.error("Erro ao carregar refeições:", error);
@@ -23,19 +25,22 @@ export default function HistoryScreen() {
     loadMeals();
   }, []);
 
-  // Função para excluir refeição
+  // Excluir refeição
   const deleteMeal = async (id) => {
     try {
       const updatedMeals = meals.filter((meal) => meal.id !== id);
       await AsyncStorage.setItem("meals", JSON.stringify(updatedMeals));
       setMeals(updatedMeals);
       Alert.alert("Sucesso", "Refeição excluída!");
+
+      // Recarregar os dados para garantir que a lista seja atualizada
+      loadMeals();
     } catch (error) {
       Alert.alert("Erro", "Não foi possível excluir.");
     }
   };
 
-  // Filtrar os resultados pelo nome da refeição
+  // Filtrar refeições pelo nome
   const filteredMeals = meals.filter((item) =>
     item.meal.toLowerCase().includes(search.toLowerCase())
   );
@@ -57,7 +62,7 @@ export default function HistoryScreen() {
         renderItem={({ item }) => (
           <Card style={{ marginBottom: 10, padding: 10 }}>
             <List.Item
-              title={`${item.time} - ${item.meal}`}
+              title={`${item.date} - ${item.time} - ${item.meal}`}
               description={`Insulina: ${item.insulin}U | Glicemia: ${item.glucose} mg/dL`}
               left={(props) => <List.Icon {...props} icon="food" />}
               right={(props) => (

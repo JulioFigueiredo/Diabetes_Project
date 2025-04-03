@@ -109,7 +109,7 @@ export default function HomeScreen() {
         />
 
         <TextInput
-          label="Glicemia"
+          label="Glicemia (mg/dL)"
           mode="outlined"
           keyboardType="numeric"
           placeholder="Ex: 110"
